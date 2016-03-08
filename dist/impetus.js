@@ -33,6 +33,7 @@
 		var _ref$bounce = _ref.bounce;
 		var bounce = _ref$bounce === undefined ? true : _ref$bounce;
 		var lockAxis = _ref.lockAxis;
+		var changedCallback = _ref.changed;
 
 		_classCallCheck(this, Impetus);
 
@@ -136,6 +137,13 @@
 		}
 
 		/**
+   * Executes the changed event function
+   */
+		function callChangedCallback(evt) {
+			changedCallback.call(sourceEl, evt);
+		}
+
+		/**
    * Creates a custom normalized event object from touch and mouse events
    * @param  {Event} ev
    * @returns {Object} with x, y, and id properties
@@ -163,6 +171,7 @@
    * @param  {Object} ev Normalized event
    */
 		function onDown(ev) {
+			if (changedCallback) callChangedCallback('start');
 			var event = normalizeEvent(ev);
 			if (!pointerActive && !paused) {
 				pointerActive = true;
@@ -187,6 +196,7 @@
    * @param  {Object} ev Normalized event
    */
 		function onMove(ev) {
+			if (changedCallback) callChangedCallback('update');
 			ev.preventDefault();
 			var event = normalizeEvent(ev);
 
@@ -219,6 +229,7 @@
    * @param {Object} ev Normalized event
    */
 		function onUp(ev) {
+			if (changedCallback) callChangedCallback('end');
 			var event = normalizeEvent(ev);
 
 			if (pointerActive && event.id === pointerId) {

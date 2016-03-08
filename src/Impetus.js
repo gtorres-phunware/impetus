@@ -14,7 +14,8 @@ export default class Impetus {
 		boundX,
 		boundY,
 		bounce = true,
-		lockAxis
+		lockAxis,
+		changed: changedCallback
 	}) {
 		var boundXmin, boundXmax, boundYmin, boundYmax, pointerLastX, pointerLastY, pointerCurrentX, pointerCurrentY, pointerId, decVelX, decVelY;
 		var targetX = 0;
@@ -116,6 +117,13 @@ export default class Impetus {
 		function callUpdateCallback() {
 			updateCallback.call(sourceEl, targetX, targetY);
 		}
+
+		/**
+		 * Executes the changed event function
+		 */
+		function callChangedCallback(evt) {
+			changedCallback.call(sourceEl, evt);
+		}
 		
 		/**
 		 * Creates a custom normalized event object from touch and mouse events
@@ -144,6 +152,7 @@ export default class Impetus {
 		 * @param  {Object} ev Normalized event
 		 */
 		function onDown(ev) {
+			if(changedCallback) callChangedCallback('start')
 			var event = normalizeEvent(ev);
 			if (!pointerActive && !paused) {
 				pointerActive = true;
@@ -168,6 +177,7 @@ export default class Impetus {
 		 * @param  {Object} ev Normalized event
 		 */
 		function onMove(ev) {
+			if(changedCallback) callChangedCallback('update')
 			ev.preventDefault();
 			var event = normalizeEvent(ev);
 			
@@ -200,6 +210,7 @@ export default class Impetus {
 		 * @param {Object} ev Normalized event
 		 */
 		function onUp(ev) {
+			if(changedCallback) callChangedCallback('end')
 			var event = normalizeEvent(ev);
 			
 			if (pointerActive && event.id === pointerId) {
