@@ -49,6 +49,7 @@
 		var waitingPoints = [];
 		var waitPoints = 3;
 		var axis;
+		var currentEvent;
 
 		/**
    * Initialize instance
@@ -140,7 +141,7 @@
    * Executes the changed event function
    */
 		function callChangedCallback(evt) {
-			changedCallback.call(sourceEl, evt);
+			changedCallback.call(sourceEl, currentEvent);
 		}
 
 		/**
@@ -171,7 +172,8 @@
    * @param  {Object} ev Normalized event
    */
 		function onDown(ev) {
-			if (changedCallback) callChangedCallback('start');
+			currentEvent = 'start';
+			if (changedCallback) callChangedCallback();
 			var event = normalizeEvent(ev);
 			if (!pointerActive && !paused) {
 				pointerActive = true;
@@ -196,9 +198,10 @@
    * @param  {Object} ev Normalized event
    */
 		function onMove(ev) {
-			if (changedCallback) callChangedCallback('update');
 			ev.preventDefault();
 			var event = normalizeEvent(ev);
+			currentEvent = 'update';
+			if (changedCallback) callChangedCallback();
 
 			if (pointerActive && event.id === pointerId) {
 				pointerCurrentX = event.x;
@@ -229,7 +232,8 @@
    * @param {Object} ev Normalized event
    */
 		function onUp(ev) {
-			if (changedCallback) callChangedCallback('end');
+			currentEvent = 'end';
+			if (changedCallback) callChangedCallback();
 			var event = normalizeEvent(ev);
 
 			if (pointerActive && event.id === pointerId) {
@@ -397,6 +401,9 @@
 				return;
 			}
 
+			currentEvent = 'fading';
+			if (changedCallback) callChangedCallback();
+
 			decVelX *= friction;
 			decVelY *= friction;
 
@@ -449,6 +456,8 @@
 
 				requestAnimFrame(stepDecelAnim);
 			} else {
+				currentEvent = 'faded';
+				if (changedCallback) callChangedCallback();
 				decelerating = false;
 			}
 		}

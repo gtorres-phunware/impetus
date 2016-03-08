@@ -29,6 +29,7 @@ export default class Impetus {
 		var waitingPoints = [];
         var waitPoints = 3;
         var axis;		
+        var currentEvent;
 		
 		/**
 		 * Initialize instance
@@ -122,7 +123,7 @@ export default class Impetus {
 		 * Executes the changed event function
 		 */
 		function callChangedCallback(evt) {
-			changedCallback.call(sourceEl, evt);
+			changedCallback.call(sourceEl, 	currentEvent);
 		}
 		
 		/**
@@ -152,7 +153,8 @@ export default class Impetus {
 		 * @param  {Object} ev Normalized event
 		 */
 		function onDown(ev) {
-			if(changedCallback) callChangedCallback('start')
+			currentEvent = 'start'
+			if(changedCallback) callChangedCallback()
 			var event = normalizeEvent(ev);
 			if (!pointerActive && !paused) {
 				pointerActive = true;
@@ -177,9 +179,10 @@ export default class Impetus {
 		 * @param  {Object} ev Normalized event
 		 */
 		function onMove(ev) {
-			if(changedCallback) callChangedCallback('update')
 			ev.preventDefault();
 			var event = normalizeEvent(ev);
+			currentEvent = 'update'
+			if(changedCallback) callChangedCallback()
 			
 			if (pointerActive && event.id === pointerId) {
 				pointerCurrentX = event.x;
@@ -210,7 +213,8 @@ export default class Impetus {
 		 * @param {Object} ev Normalized event
 		 */
 		function onUp(ev) {
-			if(changedCallback) callChangedCallback('end')
+			currentEvent = 'end'
+			if(changedCallback) callChangedCallback()
 			var event = normalizeEvent(ev);
 			
 			if (pointerActive && event.id === pointerId) {
@@ -385,6 +389,9 @@ export default class Impetus {
 				return;
 			}
 			
+			currentEvent = 'fading'
+			if(changedCallback) callChangedCallback()
+
 			decVelX *= friction;
 			decVelY *= friction;
 			
@@ -437,6 +444,8 @@ export default class Impetus {
 				
 				requestAnimFrame(stepDecelAnim);
 			} else {
+				currentEvent = 'faded'
+				if(changedCallback) callChangedCallback()
 				decelerating = false;
 			}
 		}
