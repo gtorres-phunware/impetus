@@ -32,6 +32,8 @@
 		var boundY = _ref.boundY;
 		var _ref$bounce = _ref.bounce;
 		var bounce = _ref$bounce === undefined ? true : _ref$bounce;
+		var lockAxis = _ref.lockAxis;
+		var changedCallback = _ref.changed;
 
 		_classCallCheck(this, Impetus);
 
@@ -44,6 +46,10 @@
 		var paused = false;
 		var decelerating = false;
 		var trackingPoints = [];
+		var waitingPoints = [];
+		var waitPoints = 3;
+		var axis;
+		var currentEvent;
 
 		/**
    * Initialize instance
@@ -132,6 +138,13 @@
 		}
 
 		/**
+   * Executes the changed event function
+   */
+		function callChangedCallback(evt) {
+			changedCallback.call(sourceEl, currentEvent);
+		}
+
+		/**
    * Creates a custom normalized event object from touch and mouse events
    * @param  {Event} ev
    * @returns {Object} with x, y, and id properties
@@ -159,6 +172,8 @@
    * @param  {Object} ev Normalized event
    */
 		function onDown(ev) {
+			currentEvent = 'start';
+			if (changedCallback) callChangedCallback();
 			var event = normalizeEvent(ev);
 			if (!pointerActive && !paused) {
 				pointerActive = true;
@@ -185,12 +200,30 @@
 		function onMove(ev) {
 			ev.preventDefault();
 			var event = normalizeEvent(ev);
+			currentEvent = 'update';
+			if (changedCallback) callChangedCallback();
 
 			if (pointerActive && event.id === pointerId) {
 				pointerCurrentX = event.x;
 				pointerCurrentY = event.y;
 				addTrackingPoint(pointerLastX, pointerLastY);
-				requestTick();
+
+				if (!axis) waitingPoints.push({ x: pointerCurrentX, y: pointerCurrentY });
+
+				if (!axis && waitingPoints.length <= waitPoints) {
+					if (waitingPoints.length == waitPoints) {
+						setAxis();
+					}
+				} else {
+					if (lockAxis) {
+						if (lockAxis == axis) {
+							ev.stopImmediatePropagation();
+							requestTick();
+						}
+					} else {
+						requestTick();
+					}
+				}
 			}
 		}
 
@@ -199,10 +232,14 @@
    * @param {Object} ev Normalized event
    */
 		function onUp(ev) {
+			currentEvent = 'end';
+			if (changedCallback) callChangedCallback();
 			var event = normalizeEvent(ev);
 
 			if (pointerActive && event.id === pointerId) {
 				stopTracking();
+				axis = null;
+				waitingPoints = [];
 			}
 		}
 
@@ -236,6 +273,17 @@
 			}
 
 			trackingPoints.push({ x: x, y: y, time: time });
+		}
+
+		/**
+   * Set the current main axis
+   */
+		function setAxis() {
+			var first = waitingPoints[0];
+			var last = waitingPoints[waitingPoints.length - 1];
+			var diffX = Math.abs(last.x - first.x);
+			var diffY = Math.abs(last.y - first.y);
+			axis = diffX > diffY ? 'x' : 'y';
 		}
 
 		/**
@@ -353,6 +401,9 @@
 				return;
 			}
 
+			currentEvent = 'fading';
+			if (changedCallback) callChangedCallback();
+
 			decVelX *= friction;
 			decVelY *= friction;
 
@@ -405,6 +456,8 @@
 
 				requestAnimFrame(stepDecelAnim);
 			} else {
+				currentEvent = 'faded';
+				if (changedCallback) callChangedCallback();
 				decelerating = false;
 			}
 		}
